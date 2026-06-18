@@ -2,3 +2,5 @@
 .mi_env/
 #tampoco el cache
 __pycache__/
+
+*. png
