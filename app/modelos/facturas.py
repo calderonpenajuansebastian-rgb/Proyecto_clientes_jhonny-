@@ -28,16 +28,19 @@ class FacturaBase(SQLModel):
 
 class FacturaCreate(FacturaBase):
     cliente: int
+    items: str | None = None
 
 
 class FacturaUpdate(SQLModel):
     cliente: int
+    items: str | None = None
     fecha: datetime | None = None
 
 
 class FacturaDB(FacturaBase):
     id: int
     cliente_id: int
+    items: str | None = None
 
     @classmethod
     def from_orm_factura(cls, factura_orm):
@@ -46,6 +49,7 @@ class FacturaDB(FacturaBase):
             id=factura_orm.id,
             cliente_id=factura_orm.cliente_id,
             fecha=factura_orm.fecha,
+            items=factura_orm.items,
         )
 
     def valor_total(self):
@@ -67,6 +71,7 @@ class FacturaLeer(FacturaBase):
 class Factura(FacturaBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     cliente_id: int = Field(foreign_key="cliente.id")
+    items: str | None = Field(default=None)
 
     transacciones: list["Transaccion"] = Relationship(
         back_populates="factura",

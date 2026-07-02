@@ -71,7 +71,26 @@ def inicio():
 @app.get("/clientes", tags=["Clientes"])
 def listar_clientes(db: Session = Depends(get_db)):
     clientes = db.query(ClienteORM).all()
-    return {"clientes": [ClienteDB.model_validate(c) for c in clientes]}
+    resultado = []
+    for cliente in clientes:
+        cliente_dict = ClienteDB.model_validate(cliente).model_dump()
+        # Obtener las facturas del cliente
+        facturas = db.query(FacturaORM).filter(FacturaORM.cliente_id == cliente.id).all()
+        items_comprados = []
+        for factura in facturas:
+            # Obtener las transacciones de cada factura
+            transacciones = db.query(TransaccionORM).filter(TransaccionORM.factura_id == factura.id).all()
+            for transaccion in transacciones:
+                items_comprados.append({
+                    "transaccion_id": transaccion.id,
+                    "cantidad": transaccion.cantidad,
+                    "vr_unitario": transaccion.vr_unitario,
+                    "factura_id": factura.id,
+                    "fecha_factura": factura.fecha
+                })
+        cliente_dict["items_comprados"] = items_comprados
+        resultado.append(cliente_dict)
+    return {"clientes": resultado}
 
 
 @app.post("/clientes", tags=["Clientes"])
@@ -126,7 +145,7 @@ def obtener_factura(factura_id: int, db: Session = Depends(get_db)):
 def crear_factura(datos: FacturaCreate, db: Session = Depends(get_db)):
     obtener_cliente_orm(db, datos.cliente)
 
-    nueva_factura = FacturaORM(cliente_id=datos.cliente)
+    nueva_factura = FacturaORM(cliente_id=datos.cliente, items=datos.items)
     db.add(nueva_factura)
     db.commit()
     db.refresh(nueva_factura)
@@ -142,6 +161,7 @@ def editar_factura(factura_id: int, datos: FacturaUpdate, db: Session = Depends(
     obtener_cliente_orm(db, datos.cliente)
     factura = obtener_factura_orm(db, factura_id)
     factura.cliente_id = datos.cliente
+    factura.items = datos.items
     db.commit()
     db.refresh(factura)
 
@@ -186,14 +206,12 @@ def crear_transaccion(factura_id: int, datos: TransaccionCreate, db: Session = D
     return {"mensaje": "Transaccion creada", "transaccion": TransaccionDB.model_validate(nueva_transaccion)}
 
 
-@app.put("/facturas/{factura_id}/transacciones/{transaccion_id}", tags=["Transacciones"])
-def editar_transaccion(factura_id: int, transaccion_id: int, datos: TransaccionUpdate, db: Session = Depends(get_db)):
-    obtener_factura_orm(db, factura_id)
+@app.put("/transacciones/{transaccion_id}", tags=["Transacciones"])
+def editar_transaccion(transaccion_id: int, datos: TransaccionUpdate, db: Session = Depends(get_db)):
     transaccion = obtener_transaccion_orm(db, transaccion_id)
 
     for campo, valor in datos.model_dump().items():
         setattr(transaccion, campo, valor)
-    transaccion.factura_id = factura_id
     db.commit()
     db.refresh(transaccion)
     return {

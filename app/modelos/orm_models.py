@@ -21,6 +21,7 @@ class FacturaORM(Base):
     id = Column(Integer, primary_key=True, index=True)
     cliente_id = Column(Integer, ForeignKey("cliente.id"), nullable=False)
     fecha = Column(DateTime, default=datetime.now)
+    items = Column(String, nullable=True)
 
     cliente = relationship("ClienteORM", back_populates="facturas")
     transacciones = relationship("TransaccionORM", back_populates="factura", cascade="all, delete-orphan")
