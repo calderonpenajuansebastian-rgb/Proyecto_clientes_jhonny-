@@ -8,13 +8,18 @@ class ClienteBase(SQLModel):
     email: str = Field(default=None)
     descripcion: str | None = Field(default=None)
 
-class ClienteCrear(ClienteBase):
-     pass
+
+class ClienteCreate(ClienteBase):
+    pass
 
 
-class ClienteEditar(ClienteBase):
-     pass
+class ClienteUpdate(ClienteBase):
+    pass
 
 
-class  Cliente(ClienteBase, table=True):
-      id: int | None = Field(default=None, primary_key=True)
+class ClienteDB(ClienteBase):
+    id: int
+
+
+class Cliente(ClienteBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)

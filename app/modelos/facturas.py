@@ -1,39 +1,75 @@
-from pydantic import BaseModel, computed_field
-
-from .transacciones import Transaccion
-from .clientes import Cliente
+from typing import TYPE_CHECKING
+from pydantic import computed_field
+from sqlmodel import SQLModel, Field, Relationship
+from .clientes import Cliente as ClienteModelo, ClienteDB as ClienteLeer
 from datetime import datetime
 
+if TYPE_CHECKING:
+    from .transacciones import Transaccion, TransaccionLeer
 
 
+class FacturaBase(SQLModel):
+    fecha: datetime = Field(default_factory=datetime.now)
 
-# Crear el modelo transacciones(id, fecha, vr_total, cliente)
-class FacturaBase(BaseModel):
-    fecha: str = datetime.now()
-    cliente: Cliente  # esta es la relacion con el cliente(objeto)
-    transacciones: list[Transaccion] = []
-    
     @computed_field
     @property
     def vr_total(self) -> float:
-        # calcular(cantidad * vr_unitario)
-        # consultar el id actual de factura
-        factura_id_actual = getattr(self, "id", None)
         total_factura = 0.0
-        if not factura_id_actual or not self.transacciones:
-            return total_factura
-        # recorrer la lista de transacciones, segun el factura_id
-        for transaccion in self.transacciones:
-            if transaccion.factura_id == factura_id_actual:
-                total_factura += transaccion.vr_unitario * transaccion.cantidad
-                
+        transacciones_factura = getattr(self, "transacciones", None)
+
+        if not transacciones_factura:
+            return 0.0
+
+        for transaccion in transacciones_factura:
+            total_factura += transaccion.vr_unitario * transaccion.cantidad
+
         return total_factura
 
-class FacturaCrear(FacturaBase):
-    pass
 
-class FacturaEditar(FacturaBase):
-    pass
+class FacturaCreate(FacturaBase):
+    cliente: int
 
-class Factura(FacturaBase):
-    id: int | None = None
+
+class FacturaUpdate(SQLModel):
+    cliente: int
+    fecha: datetime | None = None
+
+
+class FacturaDB(FacturaBase):
+    id: int
+    cliente_id: int
+
+    @classmethod
+    def from_orm_factura(cls, factura_orm):
+        """Método para crear FacturaDB desde Factura ORM"""
+        return cls(
+            id=factura_orm.id,
+            cliente_id=factura_orm.cliente_id,
+            fecha=factura_orm.fecha,
+        )
+
+    def valor_total(self):
+        """Calcular el valor total de la factura"""
+        total = 0.0
+        if hasattr(self, 'transacciones') and self.transacciones:
+            for transaccion in self.transacciones:
+                total += transaccion.vr_unitario * transaccion.cantidad
+        return total
+
+
+class FacturaLeer(FacturaBase):
+    id: int
+    cliente_id: int
+    cliente: ClienteLeer
+    transacciones: list[TransaccionLeer] = []
+
+
+class Factura(FacturaBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    cliente_id: int = Field(foreign_key="cliente.id")
+
+    transacciones: list["Transaccion"] = Relationship(
+        back_populates="factura",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    cliente: ClienteModelo = Relationship()
