@@ -1,0 +1,6 @@
+#no se debe incluir los entornos virtuales 
+.mi_env/
+#tampoco el cache
+__pycache__/
+
+*. png
