@@ -124,12 +124,28 @@ def eliminar_cliente(id: int, db: Session = Depends(get_db)):
 @app.get("/facturas", tags=["Facturas"])
 def listar_facturas(db: Session = Depends(get_db)):
     facturas = db.query(FacturaORM).all()
-    return {
-        "facturas": [
-            {**FacturaDB.from_orm_factura(f).model_dump(), "valor_total": FacturaDB.from_orm_factura(f).valor_total()}
-            for f in facturas
-        ]
-    }
+    resultado = []
+    for f in facturas:
+        factura_dict = FacturaDB.from_orm_factura(f).model_dump()
+        factura_dict["valor_total"] = FacturaDB.from_orm_factura(f).valor_total()
+        # Agregar información del cliente
+        cliente = db.query(ClienteORM).filter(ClienteORM.id == f.cliente_id).first()
+        if cliente:
+            factura_dict["cliente"] = {
+                "id": cliente.id,
+                "nombre": cliente.nombre,
+                "email": cliente.email,
+                "descripcion": cliente.descripcion
+            }
+        # Agregar transacciones con vr_total
+        transacciones = db.query(TransaccionORM).filter(TransaccionORM.factura_id == f.id).all()
+        factura_dict["transacciones"] = []
+        for t in transacciones:
+            transaccion_dict = TransaccionDB.model_validate(t).model_dump()
+            transaccion_dict["vr_total"] = abs(t.cantidad * t.vr_unitario)
+            factura_dict["transacciones"].append(transaccion_dict)
+        resultado.append(factura_dict)
+    return {"facturas": resultado}
 
 
 @app.get("/facturas/{factura_id}", tags=["Facturas"])
@@ -138,12 +154,28 @@ def obtener_factura(factura_id: int, db: Session = Depends(get_db)):
     factura_db = FacturaDB.from_orm_factura(factura)
     data = factura_db.model_dump()
     data["valor_total"] = factura_db.valor_total()
+    # Agregar información del cliente
+    cliente = db.query(ClienteORM).filter(ClienteORM.id == factura.cliente_id).first()
+    if cliente:
+        data["cliente"] = {
+            "id": cliente.id,
+            "nombre": cliente.nombre,
+            "email": cliente.email,
+            "descripcion": cliente.descripcion
+        }
+    # Agregar transacciones con vr_total
+    transacciones = db.query(TransaccionORM).filter(TransaccionORM.factura_id == factura.id).all()
+    data["transacciones"] = []
+    for t in transacciones:
+        transaccion_dict = TransaccionDB.model_validate(t).model_dump()
+        transaccion_dict["vr_total"] = abs(t.cantidad * t.vr_unitario)
+        data["transacciones"].append(transaccion_dict)
     return {"factura": data}
 
 
 @app.post("/facturas", tags=["Facturas"])
 def crear_factura(datos: FacturaCreate, db: Session = Depends(get_db)):
-    obtener_cliente_orm(db, datos.cliente)
+    cliente = obtener_cliente_orm(db, datos.cliente)
 
     nueva_factura = FacturaORM(cliente_id=datos.cliente, items=datos.items)
     db.add(nueva_factura)
@@ -153,12 +185,21 @@ def crear_factura(datos: FacturaCreate, db: Session = Depends(get_db)):
     factura_db = FacturaDB.from_orm_factura(nueva_factura)
     data = factura_db.model_dump()
     data["valor_total"] = factura_db.valor_total()
+    # Agregar información del cliente
+    data["cliente"] = {
+        "id": cliente.id,
+        "nombre": cliente.nombre,
+        "email": cliente.email,
+        "descripcion": cliente.descripcion
+    }
+    # Agregar transacciones (vacío al crear)
+    data["transacciones"] = []
     return {"mensaje": "Factura creada", "factura": data}
 
 
 @app.put("/facturas/{factura_id}", tags=["Facturas"])
 def editar_factura(factura_id: int, datos: FacturaUpdate, db: Session = Depends(get_db)):
-    obtener_cliente_orm(db, datos.cliente)
+    cliente = obtener_cliente_orm(db, datos.cliente)
     factura = obtener_factura_orm(db, factura_id)
     factura.cliente_id = datos.cliente
     factura.items = datos.items
@@ -168,6 +209,20 @@ def editar_factura(factura_id: int, datos: FacturaUpdate, db: Session = Depends(
     factura_db = FacturaDB.from_orm_factura(factura)
     data = factura_db.model_dump()
     data["valor_total"] = factura_db.valor_total()
+    # Agregar información del cliente
+    data["cliente"] = {
+        "id": cliente.id,
+        "nombre": cliente.nombre,
+        "email": cliente.email,
+        "descripcion": cliente.descripcion
+    }
+    # Agregar transacciones con vr_total
+    transacciones = db.query(TransaccionORM).filter(TransaccionORM.factura_id == factura.id).all()
+    data["transacciones"] = []
+    for t in transacciones:
+        transaccion_dict = TransaccionDB.model_validate(t).model_dump()
+        transaccion_dict["vr_total"] = abs(t.cantidad * t.vr_unitario)
+        data["transacciones"].append(transaccion_dict)
     return {"mensaje": "Factura actualizada", "factura": data}
 
 
