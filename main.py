@@ -1,0 +1,2 @@
+
+# Configuracion de CORS Middleware
