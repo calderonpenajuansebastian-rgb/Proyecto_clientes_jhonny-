@@ -147,3 +147,4 @@ async def eliminar_factura(
     sesion.commit()
 
     return factura_bd
+# Entregado

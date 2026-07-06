@@ -76,3 +76,4 @@ async def eliminar_cliente(cliente_id: int, sesion: Sesion_dependencia):
 
     sesion.delete(cliente_bd)
     sesion.commit()
+# Entregado

@@ -23,3 +23,5 @@ class ClienteDB(ClienteBase):
 
 class Cliente(ClienteBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
+
+# Entregado

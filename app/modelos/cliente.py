@@ -10,3 +10,4 @@ from .clientes import (
 
 # Alias para compatibilidad con main.py
 __all__ = ["ClienteCreate", "ClienteDB", "ClienteUpdate"]
+# Entregado

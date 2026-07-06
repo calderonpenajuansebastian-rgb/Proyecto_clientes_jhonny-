@@ -27,3 +27,5 @@ class Transaccion(BaseModel):
     id: int
     descripcion: str
     factura: int
+
+# Entregado

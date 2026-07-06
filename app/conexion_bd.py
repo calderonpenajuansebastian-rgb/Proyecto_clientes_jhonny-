@@ -19,3 +19,4 @@ def obtener_sesion():
         yield mi_sesion
 
 Sesion_dependencia = Annotated[Session, Depends(obtener_sesion)]
+# Entregado

@@ -11,3 +11,4 @@ from .facturas import (
 
 # Alias para compatibilidad con main.py
 __all__ = ["FacturaCreate", "FacturaDB", "FacturaUpdate"]
+# Entregado

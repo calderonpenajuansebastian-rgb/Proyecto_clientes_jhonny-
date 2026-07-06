@@ -45,3 +45,5 @@ class Transaccion(SQLModel, table=True):
     metodo_pago: str | None = Field(default=None)
 
     factura: FacturaLeer = Relationship(back_populates="transacciones")
+
+# Entregado

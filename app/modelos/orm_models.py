@@ -37,3 +37,5 @@ class TransaccionORM(Base):
     metodo_pago = Column(String, nullable=True)
 
     factura = relationship("FacturaORM", back_populates="transacciones")
+
+# Entregado

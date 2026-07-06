@@ -78,3 +78,5 @@ class Factura(FacturaBase, table=True):
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
     cliente: ClienteModelo = Relationship()
+
+# Entregado

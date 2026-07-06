@@ -121,3 +121,4 @@ def eliminar_transaccion(transaccion_id: int):
     
     return {"message": f"Transacción {transaccion_id} eliminada con éxito"}
     
+# Entregado

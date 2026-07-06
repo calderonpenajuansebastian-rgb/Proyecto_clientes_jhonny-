@@ -11,3 +11,5 @@ from .transacciones import (
 
 # Alias para compatibilidad con main.py
 __all__ = ["TransaccionCreate", "TransaccionDB", "TransaccionUpdate"]
+
+# Entregado
